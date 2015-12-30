@@ -1,28 +1,24 @@
-var fs = require('fs'),
-	https = require('https'),
+var https = require('https'),
 	express = require('express'),
 	moment = require('moment'),
-	config = require('./config.js'),
 	morgan = require('morgan'),
 	bodyParser = require('body-parser'),
 	jwt = require('jsonwebtoken'),
-	neo4j = require('neo4j'),
 	accountManagement = require('./accountmanagement.js'),
+	common = require('./common.js'),
 	app = express();
 
-var hskey = fs.readFileSync('ssl/private.key');
-var hscert = fs.readFileSync('ssl/certificate.crt');
+var hskey = common.fs.readFileSync('ssl/private.key');
+var hscert = common.fs.readFileSync('ssl/certificate.crt');
 
 var options = {
 	key: hskey,
 	cert: hscert
 };
 
-var port = config.port;
-var db = new neo4j.GraphDatabase(config.dbUrl);
-accountManagement.setup(db);
+var port = common.config.port;
 
-app.set('superSecret', config.secret);
+app.set('superSecret', common.config.secret);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
