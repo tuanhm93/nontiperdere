@@ -27,23 +27,10 @@ app.use(morgan('dev'));
 
 //Routes without protection
 var routes = express.Router();
-// routes.get('/register', function(req, res){
-// 	res.json({token: jwt.sign({id:1, name:'hmt', age:'5', random:111}, app.get('superSecret'), {
-//           expiresIn: 1000 // expires in 24 hours
-//       })});
-// 	var neo4j = require('neo4j');
-// 	var db = new neo4j.GraphDatabase(config.dbUrl);
-// 	var node = db.createNode({hello: 'world'});     // instantaneous, but...
-// 	node.save(function (err, node) {    // ...this is what actually persists.
-//     	if (err) {
-//         	console.error('Error saving new node to database:', err);
-//     	} else {
-//         	console.log('Node saved to database with id:', node.id);
-//     	}
-// 	});
-// });
 
 routes.post('/register', accountManagement.register);
+routes.get('/forgot', accountManagement.sendCodeToEmail);
+routes.post('/reset', accountManagement.resetPassword);
 
 app.use('/api', routes);
 
