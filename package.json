@@ -1,0 +1,23 @@
+{
+  "name": "nontiperdere",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apoc": "^2.1.6",
+    "blueimp-md5": "^1.1.1",
+    "body-parser": "^1.14.2",
+    "cookie-parser": "^1.4.0",
+    "express": "^4.13.3",
+    "jsonwebtoken": "^5.4.1",
+    "moment": "^2.10.6",
+    "morgan": "^1.6.1",
+    "neo4j": "^1.1.1",
+    "validator": "^4.4.0"
+  }
+}
