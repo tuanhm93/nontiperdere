@@ -29,8 +29,9 @@ app.use(morgan('dev'));
 var routes = express.Router();
 
 routes.post('/register', accountManagement.register);
-routes.get('/forgot', accountManagement.sendCodeToEmail);
-routes.post('/reset', accountManagement.resetPassword);
+routes.post('/login', accountManagement.login);
+routes.post('/getCodeFromEmail', accountManagement.getCodeFromEmail);
+routes.post('/resetPassword', accountManagement.resetPassword);
 
 app.use('/api', routes);
 

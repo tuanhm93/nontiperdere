@@ -17,7 +17,8 @@
     "jsonwebtoken": "^5.4.1",
     "moment": "^2.10.6",
     "morgan": "^1.6.1",
-    "neo4j": "^1.1.1",
+    "neo4j": "2.0.0-RC2",
+    "nodemailer": "^0.7.1",
     "validator": "^4.4.0"
   }
 }
