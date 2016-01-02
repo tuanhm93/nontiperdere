@@ -13,69 +13,50 @@ function register(req, res){
 	var email = req.body.email;
 	var password = req.body.password;
 
-	if(common.validator.isEmail(email)&&common.validator.isLength(password, 6)&&common.validator.trim(name).length != 0){
-		// Check email in db
-		var query = [
-			'MATCH (user:User {email: {props}.email})',
+	if((typeof name == "string") && (typeof email == "string") && (typeof password == "string") &&
+		common.validator.isEmail(email) && common.validator.isLength(password, 6) && (name = name.trim()).length != 0){
+		var time = new Date().getTime();
+		query = [
+			'CREATE (user:User {props})',
 			'RETURN user',
 		].join('\n');
 
-		var params = {
-			props: {		
-				email: email
+		params = {
+			props: {
+				name: name,
+				email:email,
+				password: common.blueimpMd5.md5(password, common.config.HMAC_KEY),
+				created_date:time,
+				updated_date:time,
+				avatar: common.config.AVATAR_DEFAULT,
+				code: genCode(),
+				code_expire_time: time,
+				code_attempt: common.config.CODE_ATTEMPT
 			}
 		};
-
 		common.db.cypher({
 			query: query,
 			params: params,
 		}, function (err, results) {
 			if(err){
-				res.json({ success: false, message: "System Error"});
-			}else{
-				if(results.length == 0){	
-					var time = new Date().getTime();
-					query = [
-						'CREATE (user:User {props})',
-						'RETURN user',
-					].join('\n');
-
-					params = {
-						props: {
-							name: name,
-							email:email,
-							password:password,
-							created_date:time,
-							updated_date:time,
-							code: genCode()
-						}
-					};
-					common.db.cypher({
-						query: query,
-						params: params,
-					}, function (err, results) {
-						if(err){
-							res.json({ success: false, message: "System Error"});
-						}else{
-							res.json({ success: true});
-						}
-					});
+				if(err.neo4j != undefined){
+					res.json({success: false, message: "Email is already in use"});
 				}else{
-					res.json({ success: false, message: "Email is already in used"});
-				}	
+					res.json({success: false, message: "System error"});
+				}
+			}else{
+				res.json({ success: true});
 			}
 		});
 	}else{
-		res.json({ success: false, message: "Something wrong with your input" });
+		res.json({success: false, message: "There's something wrong with your input"});
 	}
 }
 
 function login(req, res){
-	if(req.body.type == common.config.FACEBOOK_LOGIN){
-
-	}else{
-		var email = req.body.email;
-		var password = req.body.password;
+	if(req.body.type == 1){
+		res.json({success: false, message: "LOGIN WITH FACEBOOK"});
+	}else if(common.validator.isEmail(req.body.email)){
 		var query = [
 			'MATCH (user:User {email: {props}.email, password: {props}.password})',
 			'RETURN user',
@@ -83,8 +64,8 @@ function login(req, res){
 
 		var params = {
 			props: {		
-				email: email,
-				password: password
+				email: req.body.email,
+				password: common.blueimpMd5.md5(req.body.password, common.config.HMAC_KEY)
 			}
 		};
 
@@ -100,23 +81,27 @@ function login(req, res){
 				res.json({success: true, results });
 			}
 		});
+	}else{
+		res.json({success: false, message: "Email or password is wrong"});
 	}
 }
 
 function getCodeFromEmail(req, res){
 	var email = req.body.email;
 	var code = genCode();
+	var expireTime = new Date().getTime() + common.config.CODE_EXPIRE_TIME;
 
 	var query = [
 			'MATCH (user:User {email: {props}.email})',
-			'SET user.code = {props}.code',
+			'SET user.code = {props}.code, user.code_attempt = 0, user.code_expire_time = {props}.expireTime',
 			'RETURN user',
 	].join('\n');
 
 	var params = {
 		props: {		
 			email: email,
-			code: code
+			code: code,
+			expireTime: expireTime
 		}
 	};
 
@@ -136,7 +121,6 @@ function getCodeFromEmail(req, res){
 			};
 			smtpTransport.sendMail(mailOptions, function(err, inf){
 				if(err){
-					// res.send(err);
 					res.json({success: false, message: "System error"});
 				}else{
 					res.json({success: true});
@@ -150,18 +134,17 @@ function resetPassword(req, res){
 	var email = req.body.email;
 	var code = req.body.code;
 	var password = req.body.password;
+	var time = new Date().getTime();
+	console.log(time);
 	if(common.validator.isLength(password, 6)){
 		var query = [
-				'MATCH (user:User {email: {props}.email, code: {props}.code})',
-				'SET user.password = {props}.password',
-				'RETURN user',
+			'MATCH (user:User {email: {props}.email})',
+			'RETURN user',
 		].join('\n');
 
 		var params = {
 			props: {		
-				email: email,
-				code: code,
-				password: password
+				email: email
 			}
 		};
 
@@ -172,9 +155,55 @@ function resetPassword(req, res){
 			if(err){
 				res.json({success: false, message: "System error"});
 			}else if(results.length == 0){
-				res.json({success: false, message: "Email or code is incorrect"});
+				res.json({success: false, message: "Email is not exist"});
+			}else if(results[0].user.properties.code_attempt < common.config.CODE_ATTEMPT && results[0].user.properties.code_expire_time > time){
+				if(results[0].user.properties.code == code){
+					query = [
+						'MATCH (user:User {email: {props}.email})',
+						'SET user.password = {props}.password, user.updated_date = {props}.time, user.code_attempt = {props}.codeAttempt',
+						'RETURN user'
+					].join('\n');
+
+					params = {
+						props: {		
+							email: email,
+							password: common.blueimpMd5.md5(password, common.config.HMAC_KEY),
+							time: time,
+							codeAttempt: common.config.CODE_ATTEMPT
+						}
+					};
+					common.db.cypher({
+						query: query,
+						params: params,
+					}, function (err, results) {
+						if(err){
+							res.json({success: false, message: "System error"});
+						}else{
+							res.json({success: true});
+						}
+					});
+				}else{
+					res.json({success: false, message: "Code is incorrect"});
+					query = [
+						'MATCH (user:User {email: {props}.email})',
+						'SET user.code_attempt = user.code_attempt + 1',
+						'RETURN user'
+					].join('\n');
+
+					params = {
+						props: {		
+							email: email,
+						}
+					};
+					common.db.cypher({
+						query: query,
+						params: params,
+					}, function(err, results){
+
+					});
+				}
 			}else{
-				res.json({success: true});
+				res.json({success: false, message: "Code hết hiệu lực, hoặc nhập sai quá nhiều!"});
 			}
 		});
 	}else{
@@ -186,7 +215,7 @@ function resetPassword(req, res){
 function genCode(){
 	code = "" + Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9) + 
 			Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9);
-	return code;
+	return parseInt(code);
 }
 
 module.exports = {
@@ -195,5 +224,3 @@ module.exports = {
 	getCodeFromEmail: getCodeFromEmail,
 	resetPassword: resetPassword
 };
-
-

@@ -16,9 +16,9 @@ var options = {
 	cert: hscert
 };
 
-var port = common.config.port;
+var port = common.config.PORT;
 
-app.set('superSecret', common.config.secret);
+app.set('superSecret', common.config.SECRET);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
