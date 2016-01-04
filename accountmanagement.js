@@ -8,6 +8,7 @@ var smtpTransport = nodemailer.createTransport("SMTP",{
 	}
 });
 
+
 function register(req, res){
 	var name = req.body.name;
 	var email = req.body.email;
