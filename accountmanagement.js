@@ -17,8 +17,7 @@ function register(req, res){
 		common.validator.isEmail(email) && common.validator.isLength(password, 6) && (name = name.trim()).length != 0){
 		var time = new Date().getTime();
 		query = [
-			'CREATE (user:User {props})',
-			'RETURN user',
+			'CREATE (user:User {props})'	
 		].join('\n');
 
 		params = {
@@ -59,7 +58,7 @@ function login(req, res){
 	}else if(common.validator.isEmail(req.body.email)){
 		var query = [
 			'MATCH (user:User {email: {props}.email, password: {props}.password})',
-			'RETURN user',
+			'RETURN id(user) as id, user.name as name, user.avatar as avatar',
 		].join('\n');
 
 		var params = {
@@ -78,7 +77,7 @@ function login(req, res){
 			}else if(results.length == 0){
 				res.json({success: false, message: "Email or password is wrong"});
 			}else{
-				res.json({success: true, results });
+				res.json({success: true, user: {id: results[0].id, name: results[0].name, avatar: results[0].avatar} });
 			}
 		});
 	}else{
@@ -214,7 +213,8 @@ function resetPassword(req, res){
 
 function genCode(){
 	code = "" + Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9) + 
-			Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9);
+			    Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9) + 
+			    Math.ceil(Math.random()*9) + Math.ceil(Math.random()*9) ;
 	return parseInt(code);
 }
 
