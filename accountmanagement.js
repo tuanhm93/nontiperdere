@@ -58,7 +58,7 @@ function login(req, res){
 	}else if(common.validator.isEmail(req.body.email)){
 		var query = [
 			'MATCH (user:User {email: {props}.email, password: {props}.password})',
-			'RETURN id(user) as id, user.name as name, user.avatar as avatar',
+			'RETURN user.name as name, user.avatar as avatar',
 		].join('\n');
 
 		var params = {
@@ -92,8 +92,8 @@ function getCodeFromEmail(req, res){
 
 	var query = [
 			'MATCH (user:User {email: {props}.email})',
-			'SET user.code = {props}.code, user.code_attempt = 0, user.code_expire_time = {props}.expireTime',
-			'RETURN user',
+			'SET user.code = {props}.code, user.code_attempt = 0, user.code_expire_time = {props}.expireTime'
+			'RETURN id(user)',
 	].join('\n');
 
 	var params = {
